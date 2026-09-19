@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Recorder Cloud Controller</title>
+    <title>Live Recorder Cloud Switch</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #0b0f19;
-            --bg-card: rgba(18, 24, 38, 0.85);
+            --bg-card: rgba(18, 24, 38, 0.9);
             --border-color: rgba(255, 255, 255, 0.08);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --green: #10b981;
-            --green-glow: rgba(16, 185, 129, 0.35);
+            --green-glow: rgba(16, 185, 129, 0.4);
             --red: #ef4444;
-            --red-glow: rgba(239, 68, 68, 0.35);
+            --red-glow: rgba(239, 68, 68, 0.4);
+            --yellow: #f59e0b;
+            --yellow-glow: rgba(245, 158, 11, 0.4);
             --blue: #3b82f6;
             --blue-glow: rgba(59, 130, 246, 0.35);
         }
@@ -30,7 +32,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg-primary) 70%);
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, var(--bg-primary) 70%);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
@@ -47,7 +49,7 @@
             padding: 2.25rem;
             width: 100%;
             max-width: 440px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             text-align: center;
             animation: fadeIn 0.4s ease-out;
         }
@@ -85,29 +87,100 @@
             font-size: 1.65rem;
             font-weight: 800;
             letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         p.subtitle {
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             color: var(--text-muted);
-            margin-bottom: 1.75rem;
+            margin-bottom: 1.5rem;
             line-height: 1.45;
         }
 
+        /* ── Live Status Panel ── */
+        .live-status-card {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        /* Online Green */
+        .status-badge.online { color: #34d399; }
+        .status-badge.online .status-dot {
+            background: #10b981;
+            box-shadow: 0 0 12px #10b981, 0 0 20px #10b981;
+            animation: pulseGreen 2s infinite;
+        }
+
+        /* Offline Red */
+        .status-badge.offline { color: #f87171; }
+        .status-badge.offline .status-dot {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+
+        /* Transitioning Yellow */
+        .status-badge.booting { color: #fbbf24; }
+        .status-badge.booting .status-dot {
+            background: #f59e0b;
+            box-shadow: 0 0 12px #f59e0b;
+            animation: pulseYellow 1s infinite;
+        }
+
+        @keyframes pulseGreen {
+            0% { transform: scale(0.95); box-shadow: 0 0 8px #10b981; }
+            50% { transform: scale(1.15); box-shadow: 0 0 18px #10b981, 0 0 28px rgba(16,185,129,0.5); }
+            100% { transform: scale(0.95); box-shadow: 0 0 8px #10b981; }
+        }
+
+        @keyframes pulseYellow {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+
+        .status-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
         .server-info-box {
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
-            padding: 0.85rem 1.1rem;
-            margin-bottom: 1.75rem;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
         }
 
         .server-info-box .label {
@@ -141,7 +214,6 @@
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
-            position: relative;
         }
 
         .btn:active {
@@ -183,17 +255,17 @@
         }
 
         .btn:disabled {
-            opacity: 0.55;
+            opacity: 0.5;
             cursor: not-allowed;
             filter: grayscale(0.5);
         }
 
         #statusBox {
-            margin-top: 1.5rem;
+            margin-top: 1.25rem;
             padding: 0.9rem;
             border-radius: 12px;
             font-size: 0.85rem;
-            line-height: 1.4;
+            line-height: 1.45;
             display: none;
             animation: fadeIn 0.3s ease-out;
         }
@@ -220,9 +292,21 @@
         }
 
         .footer-note {
-            margin-top: 1.5rem;
+            margin-top: 1.25rem;
             font-size: 0.74rem;
             color: #64748b;
+        }
+
+        .state-sync-link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.72rem;
+            color: #475569;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .state-sync-link:hover {
+            color: #94a3b8;
         }
     </style>
 </head>
@@ -236,6 +320,15 @@
 
         <h1>Live Recorder</h1>
         <p class="subtitle">1-Click Wake & Sleep Controller. Power on to record, power off to save credits.</p>
+
+        <!-- Dynamic Status Indicator -->
+        <div class="live-status-card" id="statusCard">
+            <div class="status-badge online" id="statusBadge">
+                <span class="status-dot"></span>
+                <span id="statusTitle">ONLINE & RUNNING</span>
+            </div>
+            <div class="status-desc" id="statusSub">Compute rate is $0.049/hr. Click Power Off to stop billing.</div>
+        </div>
 
         <div class="server-info-box">
             <span class="label">Server IP</span>
@@ -259,6 +352,7 @@
         <div id="statusBox"></div>
 
         <p class="footer-note">Powered Off rate is $0.00/hr. Running rate is $0.049/hr.</p>
+        <span class="state-sync-link" onclick="toggleLocalState()">Toggle Display State (If changed outside)</span>
     </div>
 
     <script>
@@ -266,60 +360,108 @@
         const STOP_WEBHOOK_URL  = "https://prod-15.centralindia.logic.azure.com:443/workflows/898756acf0f24fe8af5ada249243b453/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=FSMaduub4miS8Ve_USM6zZ4W_ZuRbiGO2-tvBFWt73o";
         const DASHBOARD_URL     = "http://20.219.185.222:7860";
 
-        const statusBox = document.getElementById('statusBox');
-        const btnOn     = document.getElementById('btnOn');
-        const btnOff    = document.getElementById('btnOff');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusSub   = document.getElementById('statusSub');
+        const statusBox   = document.getElementById('statusBox');
+        const btnOn       = document.getElementById('btnOn');
+        const btnOff      = document.getElementById('btnOff');
+        const btnDash     = document.getElementById('btnDash');
 
-        function setStatus(msg, type) {
-            statusBox.className = type;
-            statusBox.innerHTML = msg;
+        function renderState(mode) {
+            localStorage.setItem('vm_power_state', mode);
+
+            if (mode === 'running') {
+                statusBadge.className = 'status-badge online';
+                statusTitle.innerText = 'ONLINE & RUNNING';
+                statusSub.innerText   = 'Compute billing active ($0.049/hr). Recorder ready.';
+                btnOn.disabled  = true;
+                btnOff.disabled = false;
+                btnDash.style.opacity = '1';
+                btnDash.style.pointerEvents = 'auto';
+            } else if (mode === 'stopped') {
+                statusBadge.className = 'status-badge offline';
+                statusTitle.innerText = 'POWERED OFF (DEALLOCATED)';
+                statusSub.innerText   = 'Compute charges are $0.00/hr. VM is sleeping.';
+                btnOn.disabled  = false;
+                btnOff.disabled = true;
+                btnDash.style.opacity = '0.4';
+                btnDash.style.pointerEvents = 'none';
+            } else if (mode === 'booting') {
+                statusBadge.className = 'status-badge booting';
+                statusTitle.innerText = 'BOOTING UP VM...';
+                statusSub.innerText   = 'Starting hardware and launching PM2 recorder...';
+                btnOn.disabled  = true;
+                btnOff.disabled = true;
+            } else if (mode === 'stopping') {
+                statusBadge.className = 'status-badge booting';
+                statusTitle.innerText = 'DEALLOCATING VM...';
+                statusSub.innerText   = 'Stopping compute charges to freeze billing...';
+                btnOn.disabled  = true;
+                btnOff.disabled = true;
+            }
+        }
+
+        // Initialize from saved state (Default to 'running' since we just deployed it)
+        const savedState = localStorage.getItem('vm_power_state') || 'running';
+        renderState(savedState);
+
+        function toggleLocalState() {
+            const current = localStorage.getItem('vm_power_state') || 'running';
+            renderState(current === 'running' ? 'stopped' : 'running');
         }
 
         async function powerOn() {
-            btnOn.disabled = true;
-            btnOff.disabled = true;
-            setStatus('⏳ <b>Sending Power-On signal to Azure...</b><br>Please wait while the VM initializes.', 'info');
+            renderState('booting');
+            statusBox.className = 'info';
+            statusBox.style.display = 'block';
+            statusBox.innerHTML = '⏳ <b>Sending Power-On signal to Azure...</b><br>Please wait while the VM initializes.';
 
             try {
                 await fetch(START_WEBHOOK_URL, { method: 'POST' });
 
                 let countdown = 40;
                 const timer = setInterval(() => {
-                    setStatus(`🚀 <b>VM is booting up!</b><br>PM2 is launching the recorder dashboard.<br>Redirecting in <b>${countdown}s</b>...`, 'info');
+                    statusBox.innerHTML = `🚀 <b>VM is booting up!</b><br>PM2 is launching the recorder dashboard.<br>Redirecting to dashboard in <b>${countdown}s</b>...`;
                     countdown--;
 
                     if (countdown < 0) {
                         clearInterval(timer);
-                        setStatus(`✅ <b>Server is Ready!</b> Redirecting to dashboard...`, 'success');
-                        window.location.href = DASHBOARD_URL;
+                        renderState('running');
+                        statusBox.className = 'success';
+                        statusBox.innerHTML = `✅ <b>Server is Ready!</b> Redirecting now...`;
+                        setTimeout(() => {
+                            window.location.href = DASHBOARD_URL;
+                        }, 1200);
                     }
                 }, 1000);
 
             } catch (err) {
-                setStatus('❌ <b>Error:</b> Could not trigger Power On: ' + err.message, 'error');
-                btnOn.disabled = false;
-                btnOff.disabled = false;
+                renderState('stopped');
+                statusBox.className = 'error';
+                statusBox.innerHTML = '❌ <b>Error:</b> Could not trigger Power On: ' + err.message;
             }
         }
 
         async function powerOff() {
-            if (!confirm("Are you sure you want to stop the VM?\n\nThis will stop compute billing immediately ($0.00/hr).")) {
+            if (!confirm("Are you sure you want to stop the VM?\n\nThis will freeze compute billing immediately ($0.00/hr).")) {
                 return;
             }
 
-            btnOn.disabled = true;
-            btnOff.disabled = true;
-            setStatus('⏳ <b>Sending Deallocate signal to Azure...</b><br>Stopping VM to freeze charges.', 'info');
+            renderState('stopping');
+            statusBox.className = 'info';
+            statusBox.style.display = 'block';
+            statusBox.innerHTML = '⏳ <b>Sending Deallocate signal to Azure...</b><br>Stopping VM to freeze charges.';
 
             try {
                 await fetch(STOP_WEBHOOK_URL, { method: 'POST' });
-                setStatus('✅ <b>VM Successfully Deallocated!</b><br>Compute charges are now $0.00/hr. The VM is safely powered off.', 'success');
-                btnOn.disabled = false;
-                btnOff.disabled = false;
+                renderState('stopped');
+                statusBox.className = 'success';
+                statusBox.innerHTML = '✅ <b>VM Successfully Deallocated!</b><br>Compute charges are now $0.00/hr. The VM is safely sleeping.';
             } catch (err) {
-                setStatus('❌ <b>Error:</b> Could not trigger Power Off: ' + err.message, 'error');
-                btnOn.disabled = false;
-                btnOff.disabled = false;
+                renderState('running');
+                statusBox.className = 'error';
+                statusBox.innerHTML = '❌ <b>Error:</b> Could not trigger Power Off: ' + err.message;
             }
         }
     </script>
