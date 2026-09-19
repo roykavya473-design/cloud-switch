@@ -323,11 +323,11 @@
 
         <!-- Dynamic Status Indicator -->
         <div class="live-status-card" id="statusCard">
-            <div class="status-badge online" id="statusBadge">
+            <div class="status-badge checking" id="statusBadge">
                 <span class="status-dot"></span>
-                <span id="statusTitle">ONLINE & RUNNING</span>
+                <span id="statusTitle">CHECKING AZURE STATUS...</span>
             </div>
-            <div class="status-desc" id="statusSub">Compute rate is $0.049/hr. Click Power Off to stop billing.</div>
+            <div class="status-desc" id="statusSub">Querying Azure hardware power state...</div>
         </div>
 
         <div class="server-info-box">
@@ -352,13 +352,17 @@
         <div id="statusBox"></div>
 
         <p class="footer-note">Powered Off rate is $0.00/hr. Running rate is $0.049/hr.</p>
-        <span class="state-sync-link" onclick="toggleLocalState()">Toggle Display State (If changed outside)</span>
+        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 10px;">
+            <span class="state-sync-link" onclick="checkRealStatus(true)">🔄 Check Real Status</span>
+            <span class="state-sync-link" onclick="toggleLocalState()">Manual Toggle</span>
+        </div>
     </div>
 
     <script>
-        const START_WEBHOOK_URL = "https://prod-22.centralindia.logic.azure.com:443/workflows/cb2f9668006b4cb29c57cce08bbdaec1/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=1H7yUrcXjWt8wb-jbh5iBs31V5qDaUV73irOch-iA0Q";
-        const STOP_WEBHOOK_URL  = "https://prod-15.centralindia.logic.azure.com:443/workflows/898756acf0f24fe8af5ada249243b453/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=FSMaduub4miS8Ve_USM6zZ4W_ZuRbiGO2-tvBFWt73o";
-        const DASHBOARD_URL     = "http://20.219.185.222:7860";
+        const START_WEBHOOK_URL  = "https://prod-22.centralindia.logic.azure.com:443/workflows/cb2f9668006b4cb29c57cce08bbdaec1/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=1H7yUrcXjWt8wb-jbh5iBs31V5qDaUV73irOch-iA0Q";
+        const STOP_WEBHOOK_URL   = "https://prod-15.centralindia.logic.azure.com:443/workflows/898756acf0f24fe8af5ada249243b453/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=FSMaduub4miS8Ve_USM6zZ4W_ZuRbiGO2-tvBFWt73o";
+        const STATUS_WEBHOOK_URL = "https://prod-13.centralindia.logic.azure.com:443/workflows/6b9c910dfbc0461ba7a0e8938d2a185c/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=_EVROj_ZDAWRlB1edDZNI3uU4AsmfUjWuQfPtlWdEpc";
+        const DASHBOARD_URL      = "http://20.219.185.222:7860";
 
         const statusBadge = document.getElementById('statusBadge');
         const statusTitle = document.getElementById('statusTitle');
@@ -399,12 +403,49 @@
                 statusSub.innerText   = 'Stopping compute charges to freeze billing...';
                 btnOn.disabled  = true;
                 btnOff.disabled = true;
+            } else if (mode === 'checking') {
+                statusBadge.className = 'status-badge booting';
+                statusTitle.innerText = 'CHECKING LIVE STATUS...';
+                statusSub.innerText   = 'Querying Azure VM hardware state...';
             }
         }
 
-        // Initialize from saved state (Default to 'running' since we just deployed it)
-        const savedState = localStorage.getItem('vm_power_state') || 'running';
-        renderState(savedState);
+        async function checkRealStatus(showToast = false) {
+            if (!STATUS_WEBHOOK_URL) {
+                const saved = localStorage.getItem('vm_power_state') || 'stopped';
+                renderState(saved);
+                return;
+            }
+
+            renderState('checking');
+            try {
+                const res = await fetch(STATUS_WEBHOOK_URL, { method: 'POST' });
+                const data = await res.json();
+                const statuses = Array.isArray(data) ? data : (data.statuses || []);
+                const power = statuses.find(s => s.code && s.code.startsWith('PowerState/'));
+                
+                if (power) {
+                    if (power.code === 'PowerState/running') {
+                        renderState('running');
+                    } else if (power.code === 'PowerState/deallocated' || power.code === 'PowerState/stopped') {
+                        renderState('stopped');
+                    } else if (power.code === 'PowerState/starting') {
+                        renderState('booting');
+                    } else if (power.code === 'PowerState/stopping') {
+                        renderState('stopping');
+                    }
+                } else {
+                    renderState('running');
+                }
+            } catch (err) {
+                console.error("Failed to check real status:", err);
+                const fallback = localStorage.getItem('vm_power_state') || 'running';
+                renderState(fallback);
+            }
+        }
+
+        // On load, check real Azure status
+        checkRealStatus();
 
         function toggleLocalState() {
             const current = localStorage.getItem('vm_power_state') || 'running';
