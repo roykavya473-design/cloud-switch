@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Recorder Cloud Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0f19;
+            --bg-card: rgba(18, 24, 38, 0.85);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --green: #10b981;
+            --green-glow: rgba(16, 185, 129, 0.35);
+            --red: #ef4444;
+            --red-glow: rgba(239, 68, 68, 0.35);
+            --blue: #3b82f6;
+            --blue-glow: rgba(59, 130, 246, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg-primary) 70%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .controller-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.25rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-align: center;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .badge-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 9999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #93c5fd;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1.25rem;
+        }
+
+        .badge-header span.dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #60a5fa;
+            box-shadow: 0 0 8px #60a5fa;
+        }
+
+        h1 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 1.75rem;
+            line-height: 1.45;
+        }
+
+        .server-info-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 14px;
+            padding: 0.85rem 1.1rem;
+            margin-bottom: 1.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .server-info-box .label {
+            color: var(--text-muted);
+        }
+
+        .server-info-box .ip {
+            font-family: monospace;
+            font-weight: 600;
+            color: #38bdf8;
+        }
+
+        .action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 1.05rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: inherit;
+            border-radius: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            position: relative;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-power-on {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px var(--green-glow);
+        }
+
+        .btn-power-on:hover:not(:disabled) {
+            filter: brightness(1.1);
+            box-shadow: 0 6px 22px var(--green-glow);
+        }
+
+        .btn-power-off {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 15px var(--red-glow);
+        }
+
+        .btn-power-off:hover:not(:disabled) {
+            filter: brightness(1.1);
+            box-shadow: 0 6px 22px var(--red-glow);
+        }
+
+        .btn-dashboard {
+            background: rgba(30, 41, 59, 0.9);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-dashboard:hover {
+            background: rgba(51, 65, 85, 0.9);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        #statusBox {
+            margin-top: 1.5rem;
+            padding: 0.9rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        #statusBox.info {
+            display: block;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+
+        #statusBox.success {
+            display: block;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        #statusBox.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .footer-note {
+            margin-top: 1.5rem;
+            font-size: 0.74rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controller-card">
+        <div class="badge-header">
+            <span class="dot"></span>
+            Azure Cloud Switch
+        </div>
+
+        <h1>Live Recorder</h1>
+        <p class="subtitle">1-Click Wake & Sleep Controller. Power on to record, power off to save credits.</p>
+
+        <div class="server-info-box">
+            <span class="label">Server IP</span>
+            <span class="ip">20.219.185.222:7860</span>
+        </div>
+
+        <div class="action-group">
+            <button id="btnOn" class="btn btn-power-on" onclick="powerOn()">
+                <span>🟢</span> Power On Live Recorder
+            </button>
+
+            <button id="btnOff" class="btn btn-power-off" onclick="powerOff()">
+                <span>🔴</span> Power Off (Stop Billing)
+            </button>
+
+            <a id="btnDash" class="btn btn-dashboard" href="http://20.219.185.222:7860" target="_blank">
+                <span>🚀</span> Open Live Dashboard
+            </a>
+        </div>
+
+        <div id="statusBox"></div>
+
+        <p class="footer-note">Powered Off rate is $0.00/hr. Running rate is $0.049/hr.</p>
+    </div>
+
+    <script>
+        const START_WEBHOOK_URL = "https://prod-22.centralindia.logic.azure.com:443/workflows/cb2f9668006b4cb29c57cce08bbdaec1/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=1H7yUrcXjWt8wb-jbh5iBs31V5qDaUV73irOch-iA0Q";
+        const STOP_WEBHOOK_URL  = "https://prod-15.centralindia.logic.azure.com:443/workflows/898756acf0f24fe8af5ada249243b453/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=FSMaduub4miS8Ve_USM6zZ4W_ZuRbiGO2-tvBFWt73o";
+        const DASHBOARD_URL     = "http://20.219.185.222:7860";
+
+        const statusBox = document.getElementById('statusBox');
+        const btnOn     = document.getElementById('btnOn');
+        const btnOff    = document.getElementById('btnOff');
+
+        function setStatus(msg, type) {
+            statusBox.className = type;
+            statusBox.innerHTML = msg;
+        }
+
+        async function powerOn() {
+            btnOn.disabled = true;
+            btnOff.disabled = true;
+            setStatus('⏳ <b>Sending Power-On signal to Azure...</b><br>Please wait while the VM initializes.', 'info');
+
+            try {
+                await fetch(START_WEBHOOK_URL, { method: 'POST' });
+
+                let countdown = 40;
+                const timer = setInterval(() => {
+                    setStatus(`🚀 <b>VM is booting up!</b><br>PM2 is launching the recorder dashboard.<br>Redirecting in <b>${countdown}s</b>...`, 'info');
+                    countdown--;
+
+                    if (countdown < 0) {
+                        clearInterval(timer);
+                        setStatus(`✅ <b>Server is Ready!</b> Redirecting to dashboard...`, 'success');
+                        window.location.href = DASHBOARD_URL;
+                    }
+                }, 1000);
+
+            } catch (err) {
+                setStatus('❌ <b>Error:</b> Could not trigger Power On: ' + err.message, 'error');
+                btnOn.disabled = false;
+                btnOff.disabled = false;
+            }
+        }
+
+        async function powerOff() {
+            if (!confirm("Are you sure you want to stop the VM?\n\nThis will stop compute billing immediately ($0.00/hr).")) {
+                return;
+            }
+
+            btnOn.disabled = true;
+            btnOff.disabled = true;
+            setStatus('⏳ <b>Sending Deallocate signal to Azure...</b><br>Stopping VM to freeze charges.', 'info');
+
+            try {
+                await fetch(STOP_WEBHOOK_URL, { method: 'POST' });
+                setStatus('✅ <b>VM Successfully Deallocated!</b><br>Compute charges are now $0.00/hr. The VM is safely powered off.', 'success');
+                btnOn.disabled = false;
+                btnOff.disabled = false;
+            } catch (err) {
+                setStatus('❌ <b>Error:</b> Could not trigger Power Off: ' + err.message, 'error');
+                btnOn.disabled = false;
+                btnOff.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
